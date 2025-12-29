@@ -1,0 +1,7 @@
+{
+  "name": "Sims Opticians Virtual Receptionist",
+  "description": "A high-performance voice-activated receptionist for Sims Opticians in Teddington, featuring the Gemini Live API for natural conversational booking and triage.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
