@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
 import { SYSTEM_PROMPT } from './constants';
@@ -223,8 +222,8 @@ const App: React.FC = () => {
                 {/* Text on the Left */}
                 <div className="md:w-3/5 text-center md:text-left space-y-8">
                   <div className="space-y-6">
-                    <span className="text-[#c5a059] font-black text-[10px] tracking-[0.5em] uppercase">Where 125 years of tradition meets <br/> AI & Technology of today</span>
-                    <h2 className="text-5xl md:text-7xl font-serif text-[#1e1b4b] font-bold leading-[1.1]">Optical concierge  <br/><span className="italic font-normal">at your service 24 hours a day / every day.</span></h2>
+                    <span className="text-[#c5a059] font-black text-[10px] tracking-[0.5em] uppercase">Where 125 years of tradition meets AI & Technology</span>
+                    <h2 className="text-5xl md:text-7xl font-serif text-[#1e1b4b] font-bold leading-[1.1]">Optical concierge at your service <br/><span className="italic font-normal text-slate-400">24 hours every day.</span></h2>
                     <p className="text-slate-400 max-w-xl md:mx-0 mx-auto font-medium text-lg leading-relaxed">Sophisticated optical concierge assistance, available at your discretion. Professional guidance delivered with meticulous boutique standards.</p>
                   </div>
                 </div>
@@ -248,8 +247,8 @@ const App: React.FC = () => {
                 </div>
               </div>
             ) : (
-              /* Center the Session Panel */
-              <div className="w-full max-w-3xl mx-auto bg-white rounded-[3rem] shadow-2xl border border-slate-100 flex flex-col h-[65vh] overflow-hidden my-auto">
+              /* Center the Session Panel - Smaller Max-Width (max-w-2xl) */
+              <div className="w-full max-w-2xl mx-auto bg-white rounded-[3rem] shadow-2xl border border-slate-100 flex flex-col h-[60vh] overflow-hidden my-auto animate-fadeIn">
                 <div className="bg-[#1e1b4b] p-8 flex justify-between items-center text-white">
                   <div className="flex items-center gap-6">
                     <div className={`w-12 h-12 rounded-full border border-white/10 flex items-center justify-center transition-all ${isAgentSpeaking ? 'ring-8 ring-white/5 bg-white/10 scale-105' : 'bg-white/5'}`}>
@@ -266,7 +265,7 @@ const App: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-10 space-y-10 bg-[#fcfcfd]">
                    {transcriptions.map((t, i) => (
                      <div key={i} className={`flex ${t.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
-                       <div className={`max-w-[80%] p-5 rounded-3xl shadow-sm border ${t.sender === 'user' ? 'bg-[#1e1b4b] text-white border-[#1e1b4b] rounded-tr-none' : 'bg-white text-slate-800 border-slate-200 rounded-tl-none'}`}>
+                       <div className={`max-w-[85%] p-5 rounded-3xl shadow-sm border ${t.sender === 'user' ? 'bg-[#1e1b4b] text-white border-[#1e1b4b] rounded-tr-none' : 'bg-white text-slate-800 border-slate-200 rounded-tl-none'}`}>
                          <p className="text-sm font-medium leading-relaxed tracking-wide">{t.text}</p>
                          <p className={`text-[7px] font-black uppercase tracking-widest mt-2 ${t.sender === 'user' ? 'text-indigo-300 text-right' : 'text-slate-400 text-left'}`}>{t.sender === 'user' ? 'Patient' : 'Concierge'}</p>
                        </div>
@@ -280,7 +279,7 @@ const App: React.FC = () => {
                 <div className="p-8 bg-white border-t border-slate-50 flex flex-col gap-5">
                   <div className="flex justify-between text-[8px] font-black uppercase tracking-[0.4em] text-slate-300 px-1">
                     <span>Optical Audio Stream</span>
-                    <span className="text-green-600 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Active</span>
+                    <span className="text-green-600 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>System Live</span>
                   </div>
                   <div className="h-1.5 bg-slate-50 w-full flex overflow-hidden rounded-full">
                     {[...Array(80)].map((_, i) => (
