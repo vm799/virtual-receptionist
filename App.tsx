@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
 import { SYSTEM_PROMPT } from './constants';
@@ -26,12 +27,14 @@ const App: React.FC = () => {
   const activeSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const sessionRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const transcriptScrollRef = useRef<HTMLDivElement>(null);
   const inputTranscriptionRef = useRef('');
   const outputTranscriptionRef = useRef('');
 
   useEffect(() => {
-    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (transcriptScrollRef.current) {
+      transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight;
+    }
   }, [transcriptions, currentInput, currentOutput]);
 
   const stopCall = useCallback(() => {
@@ -165,9 +168,6 @@ const App: React.FC = () => {
                 <p className="text-slate-600 leading-relaxed text-sm font-medium">We allocate a minimum of 40 minutes for every private consultation. This unhurried approach ensures our optometrists can thoroughly discuss your visual health and specific lifestyle requirements.</p>
               </div>
             </div>
-            <div className="pt-8">
-              <button onClick={() => {setActiveTab('concierge'); startCall();}} className="bg-[#1e1b4b] text-white px-12 py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.3em] shadow-xl hover:translate-y-[-2px] transition-all">Request Consultation</button>
-            </div>
           </div>
         );
       case 'atelier':
@@ -179,9 +179,9 @@ const App: React.FC = () => {
                <p className="text-slate-500 max-w-2xl mx-auto text-sm leading-relaxed font-medium">A meticulously curated selection of independent eyewear, where artisanal craftsmanship meets sophisticated design.</p>
              </div>
              <div className="grid md:grid-cols-3 gap-8 w-full">
-                <BrandCard name="Lindberg" origin="DENMARK" desc="Minimalist, customizable titanium frames. No screws, no rivets, simply the world's most sophisticated eyewear." />
-                <BrandCard name="Theo" origin="BELGIUM" desc="Experimental, colorful, and unapologetically bold. Designed for those who view spectacles as a piece of architectural art." />
-                <BrandCard name="Anne et Valentin" origin="FRANCE" desc="Blending geometric precision with eclectic flair. Each piece is designed to enhance the unique structure of the individual face." />
+                <BrandCard name="Lindberg" origin="DENMARK" desc="Minimalist titanium frames. No screws, no rivets, simply sophisticated." />
+                <BrandCard name="Theo" origin="BELGIUM" desc="Experimental, colorful, and bold architectural art for the face." />
+                <BrandCard name="Anne et Valentin" origin="FRANCE" desc="Geometric precision and eclectic flair for unique facial structures." />
              </div>
           </div>
         );
@@ -193,9 +193,9 @@ const App: React.FC = () => {
               <h2 className="font-serif text-5xl text-[#1e1b4b]">Practice Services</h2>
             </div>
             <div className="space-y-4 w-full text-left">
-              <HealthService title="Myopia Management" desc="Dedicated protocols to slow the progression of short-sightedness in children using advanced optical technology." />
-              <HealthService title="Dry Eye Diagnostic Centre" desc="A comprehensive approach to ocular discomfort, featuring precision therapeutic management." />
-              <HealthService title="Diagnostic Monitoring" desc="Continuous tracking of progressive conditions such as Glaucoma using longitudinal diagnostic data." />
+              <HealthService title="Myopia Management" desc="Dedicated protocols to slow short-sightedness in children." />
+              <HealthService title="Dry Eye Diagnostic Centre" desc="Precision therapeutic management for ocular discomfort." />
+              <HealthService title="Diagnostic Monitoring" desc="Advanced tracking for conditions like Glaucoma." />
             </div>
           </div>
         );
@@ -205,7 +205,7 @@ const App: React.FC = () => {
              <div className="bg-[#1e1b4b] p-16 rounded-[3rem] text-white space-y-10 text-center shadow-2xl">
                <span className="text-[#c5a059] font-black text-[10px] tracking-[0.5em] uppercase">Visual Freedom</span>
                <h2 className="font-serif text-5xl">Precision Contact Lenses</h2>
-               <p className="text-indigo-100/70 leading-relaxed font-medium max-w-xl mx-auto text-sm">From daily disposables for sports and social wear to specialist multifocal solutions. We provide expert fitting for all visual requirements.</p>
+               <p className="text-indigo-100/70 leading-relaxed font-medium max-w-xl mx-auto text-sm">Daily disposables and multifocal solutions with expert boutique fitting.</p>
                <div className="flex justify-center gap-6 pt-4">
                   <span className="border border-white/20 px-6 py-2 rounded-full text-[9px] font-black tracking-widest uppercase">Health Check</span>
                   <span className="border border-white/20 px-6 py-2 rounded-full text-[9px] font-black tracking-widest uppercase">Digital Care</span>
@@ -219,20 +219,18 @@ const App: React.FC = () => {
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-fadeIn min-h-[70vh]">
             {!isActive && !isConnecting ? (
               <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-center justify-between gap-16 px-4 md:px-12">
-                {/* Text on the Left */}
                 <div className="md:w-3/5 text-center md:text-left space-y-8">
                   <div className="space-y-6">
-                    <span className="text-[#c5a059] font-black text-[10px] tracking-[0.5em] uppercase">Where 125 years of tradition meets AI & Technology</span>
+                    <span className="text-[#c5a059] font-black text-[10px] tracking-[0.5em] uppercase">Where tradition meets technology</span>
                     <h2 className="text-5xl md:text-7xl font-serif text-[#1e1b4b] font-bold leading-[1.1]">Optical concierge at your service <br/><span className="italic font-normal text-slate-400">24 hours every day.</span></h2>
-                    <p className="text-slate-400 max-w-xl md:mx-0 mx-auto font-medium text-lg leading-relaxed">Sophisticated optical concierge assistance, available at your discretion. Professional guidance delivered with meticulous boutique standards.</p>
+                    <p className="text-slate-400 max-w-xl md:mx-0 mx-auto font-medium text-lg leading-relaxed">Experience sophisticated optical concierge assistance. Boutique standards, professional guidance, available whenever you require.</p>
                   </div>
                 </div>
 
-                {/* Button on the Right */}
                 <div className="md:w-2/5 flex justify-center md:justify-end">
                   <button 
                     onClick={startCall}
-                    className="group relative flex flex-col items-center gap-8 bg-[#1e1b4b] text-white px-16 py-14 rounded-[3rem] transition-all hover:shadow-2xl hover:scale-[1.02] active:scale-95 border border-indigo-900/20"
+                    className="group relative flex flex-col items-center gap-8 bg-[#1e1b4b] text-white px-16 py-14 rounded-[3rem] transition-all hover:shadow-2xl hover:scale-[1.02] active:scale-95 border border-indigo-900/20 shadow-xl"
                   >
                     <div className="p-1 bg-[#c5a059]/30 rounded-full">
                       <div className="p-6 bg-[#c5a059] rounded-full shadow-inner group-hover:scale-110 transition-transform">
@@ -241,14 +239,13 @@ const App: React.FC = () => {
                     </div>
                     <div className="space-y-2">
                       <span className="text-xl font-bold tracking-tight block">Initiate Concierge</span>
-                      <span className="text-[9px] text-[#c5a059] font-black uppercase tracking-[0.3em]">Encrypted Session</span>
+                      <span className="text-[9px] text-[#c5a059] font-black uppercase tracking-[0.3em]">Encrypted Connection</span>
                     </div>
                   </button>
                 </div>
               </div>
             ) : (
-              /* Center the Session Panel - Smaller Max-Width (max-w-2xl) */
-              <div className="w-full max-w-2xl mx-auto bg-white rounded-[3rem] shadow-2xl border border-slate-100 flex flex-col h-[60vh] overflow-hidden my-auto animate-fadeIn">
+              <div className="w-full max-w-2xl mx-auto bg-white rounded-[3rem] shadow-2xl border border-slate-100 flex flex-col h-[60vh] overflow-hidden my-auto animate-fadeIn relative">
                 <div className="bg-[#1e1b4b] p-8 flex justify-between items-center text-white">
                   <div className="flex items-center gap-6">
                     <div className={`w-12 h-12 rounded-full border border-white/10 flex items-center justify-center transition-all ${isAgentSpeaking ? 'ring-8 ring-white/5 bg-white/10 scale-105' : 'bg-white/5'}`}>
@@ -262,7 +259,10 @@ const App: React.FC = () => {
                   <button onClick={stopCall} className="bg-red-500/10 border border-red-500/30 hover:bg-red-500 hover:text-white text-red-500 px-8 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all">End Session</button>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-10 space-y-10 bg-[#fcfcfd]">
+                <div 
+                  ref={transcriptScrollRef}
+                  className="flex-1 overflow-y-auto p-10 space-y-10 bg-[#fcfcfd] scroll-smooth"
+                >
                    {transcriptions.map((t, i) => (
                      <div key={i} className={`flex ${t.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
                        <div className={`max-w-[85%] p-5 rounded-3xl shadow-sm border ${t.sender === 'user' ? 'bg-[#1e1b4b] text-white border-[#1e1b4b] rounded-tr-none' : 'bg-white text-slate-800 border-slate-200 rounded-tl-none'}`}>
@@ -273,7 +273,6 @@ const App: React.FC = () => {
                    ))}
                    {currentInput && <div className="flex justify-end opacity-30"><div className="p-5 bg-slate-100 rounded-2xl italic text-sm">"{currentInput}"</div></div>}
                    {currentOutput && <div className="flex justify-start"><div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xl text-sm font-medium animate-fadeIn">{currentOutput}</div></div>}
-                   <div ref={transcriptEndRef} />
                 </div>
 
                 <div className="p-8 bg-white border-t border-slate-50 flex flex-col gap-5">
@@ -296,7 +295,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col text-[#0f172a]">
-      {/* Premium Boutique Header */}
       <header className="bg-[#1e1b4b] border-b border-indigo-900 px-12 py-8 flex flex-col md:flex-row justify-between items-center sticky top-0 z-50 shadow-2xl">
         <div className="flex items-center gap-8 mb-6 md:mb-0">
           <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-[#1e1b4b] shadow-2xl font-serif text-5xl font-bold italic">S</div>
@@ -315,12 +313,10 @@ const App: React.FC = () => {
         </nav>
       </header>
 
-      {/* Main Experience Area */}
       <main className="flex-1 flex flex-col bg-[#fcfcfd]">
         {renderTabContent()}
       </main>
 
-      {/* Corporate Boutique Footer */}
       <footer className="bg-white border-t border-slate-100 pt-24 pb-12 px-12">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-24 text-center md:text-left">
           <div className="space-y-8 flex flex-col items-center md:items-start">
