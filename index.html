@@ -15,6 +15,7 @@
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
             color: #0f172a;
+            margin: 0;
         }
         .font-serif {
             font-family: 'Playfair+Display', serif;
@@ -61,10 +62,7 @@
 </head>
 <body>
     <div id="root"></div>
-    <!-- 
-      Relative path './index.tsx' ensures the script loads correctly on Vercel 
-      and GitHub Pages even if the project is in a subdirectory.
-    -->
+    <!-- Vite processes this index.tsx during 'npm run build' and replaces it with the bundled JS -->
     <script type="module" src="./index.tsx"></script>
 </body>
 </html>
