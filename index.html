@@ -61,7 +61,10 @@
 </head>
 <body>
     <div id="root"></div>
-    <!-- Vite entry point: Vite handles the TSX transformation -->
-    <script type="module" src="/index.tsx"></script>
+    <!-- 
+      Relative path './index.tsx' ensures the script loads correctly on Vercel 
+      and GitHub Pages even if the project is in a subdirectory.
+    -->
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>
