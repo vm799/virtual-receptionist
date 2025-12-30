@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
 import { SYSTEM_PROMPT } from './constants';
@@ -38,9 +37,19 @@ const App: React.FC = () => {
   }, [transcriptions, currentInput, currentOutput]);
 
   const stopCall = useCallback(() => {
-    if (sessionRef.current) { sessionRef.current.close(); sessionRef.current = null; }
-    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
-    if (audioContextInRef.current) { audioContextInRef.current.close(); audioContextInRef.current = null; }
+    console.log("Stopping call and cleaning up resources...");
+    if (sessionRef.current) { 
+      try { sessionRef.current.close(); } catch(e) {}
+      sessionRef.current = null; 
+    }
+    if (streamRef.current) { 
+      streamRef.current.getTracks().forEach(t => t.stop()); 
+      streamRef.current = null; 
+    }
+    if (audioContextInRef.current) { 
+      audioContextInRef.current.close().catch(() => {}); 
+      audioContextInRef.current = null; 
+    }
     activeSourcesRef.current.forEach(s => { try { s.stop(); } catch(e) {} });
     activeSourcesRef.current.clear();
     setIsActive(false);
@@ -52,14 +61,24 @@ const App: React.FC = () => {
   }, []);
 
   const startCall = async () => {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      alert("API Key is missing. Please ensure API_KEY is set in your Vercel Environment Variables and you have redeployed.");
+      return;
+    }
+
     try {
       setIsConnecting(true);
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      console.log("Initializing Gemini Live Session...");
+
+      const ai = new GoogleGenAI({ apiKey });
       const sampleRateIn = 16000;
       const sampleRateOut = 24000;
 
-      audioContextInRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: sampleRateIn });
-      audioContextOutRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: sampleRateOut });
+      const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext);
+      audioContextInRef.current = new AudioCtx({ sampleRate: sampleRateIn });
+      audioContextOutRef.current = new AudioCtx({ sampleRate: sampleRateOut });
+      
       await audioContextInRef.current.resume();
       await audioContextOutRef.current.resume();
 
@@ -70,31 +89,37 @@ const App: React.FC = () => {
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         config: {
           responseModalities: [Modality.AUDIO],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+          speechConfig: { 
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } 
+          },
           systemInstruction: SYSTEM_PROMPT,
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
         callbacks: {
           onopen: () => {
+            console.log("Gemini Session Opened.");
             setIsActive(true);
             setIsConnecting(false);
+            
             sessionPromise.then((session) => {
               sessionRef.current = session;
               session.sendRealtimeInput({ text: "START_CALL" });
             });
 
-            const source = audioContextInRef.current!.createMediaStreamSource(stream);
-            const scriptProcessor = audioContextInRef.current!.createScriptProcessor(4096, 1, 1);
-            scriptProcessor.onaudioprocess = (e) => {
-              const inputData = e.inputBuffer.getChannelData(0);
-              const pcmBlob = createBlob(inputData);
-              sessionPromise.then((session) => {
-                session.sendRealtimeInput({ media: pcmBlob });
-              });
-            };
-            source.connect(scriptProcessor);
-            scriptProcessor.connect(audioContextInRef.current!.destination);
+            if (audioContextInRef.current && streamRef.current) {
+              const source = audioContextInRef.current.createMediaStreamSource(streamRef.current);
+              const scriptProcessor = audioContextInRef.current.createScriptProcessor(4096, 1, 1);
+              scriptProcessor.onaudioprocess = (e) => {
+                if (sessionRef.current) {
+                  const inputData = e.inputBuffer.getChannelData(0);
+                  const pcmBlob = createBlob(inputData);
+                  sessionRef.current.sendRealtimeInput({ media: pcmBlob });
+                }
+              };
+              source.connect(scriptProcessor);
+              scriptProcessor.connect(audioContextInRef.current.destination);
+            }
           },
           onmessage: async (msg: LiveServerMessage) => {
             if (msg.serverContent?.outputTranscription) {
@@ -105,36 +130,49 @@ const App: React.FC = () => {
               inputTranscriptionRef.current += msg.serverContent.inputTranscription.text;
               setCurrentInput(inputTranscriptionRef.current);
             }
+            
             if (msg.serverContent?.turnComplete) {
               const userText = inputTranscriptionRef.current;
               const agentText = outputTranscriptionRef.current;
               setTranscriptions(prev => {
-                const newEntries: TranscriptionEntry[] = [
-                  { text: userText, sender: 'user' as const, timestamp: new Date() },
-                  { text: agentText, sender: 'agent' as const, timestamp: new Date() }
-                ];
-                return [...prev, ...newEntries].filter(t => t.text.trim() !== '' && t.text !== "START_CALL");
+                const newEntries: TranscriptionEntry[] = [];
+                if (userText.trim() && userText !== "START_CALL") {
+                  newEntries.push({ text: userText, sender: 'user', timestamp: new Date() });
+                }
+                if (agentText.trim()) {
+                  newEntries.push({ text: agentText, sender: 'agent', timestamp: new Date() });
+                }
+                return [...prev, ...newEntries];
               });
-              inputTranscriptionRef.current = ''; outputTranscriptionRef.current = '';
-              setCurrentInput(''); setCurrentOutput(''); setIsAgentSpeaking(false);
+              inputTranscriptionRef.current = ''; 
+              outputTranscriptionRef.current = '';
+              setCurrentInput(''); 
+              setCurrentOutput(''); 
+              setIsAgentSpeaking(false);
             }
+
             const audioData = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (audioData && audioContextOutRef.current) {
               const ctx = audioContextOutRef.current;
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);
-              const buffer = await decodeAudioData(decode(audioData), ctx, sampleRateOut, 1);
-              const source = ctx.createBufferSource();
-              source.buffer = buffer;
-              source.connect(ctx.destination);
-              source.addEventListener('ended', () => {
-                activeSourcesRef.current.delete(source);
-                if (activeSourcesRef.current.size === 0) setIsAgentSpeaking(false);
-              });
-              source.start(nextStartTimeRef.current);
-              nextStartTimeRef.current += buffer.duration;
-              activeSourcesRef.current.add(source);
-              setIsAgentSpeaking(true);
+              try {
+                const buffer = await decodeAudioData(decode(audioData), ctx, sampleRateOut, 1);
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(ctx.destination);
+                source.addEventListener('ended', () => {
+                  activeSourcesRef.current.delete(source);
+                  if (activeSourcesRef.current.size === 0) setIsAgentSpeaking(false);
+                });
+                source.start(nextStartTimeRef.current);
+                nextStartTimeRef.current += buffer.duration;
+                activeSourcesRef.current.add(source);
+                setIsAgentSpeaking(true);
+              } catch (audioErr) {
+                console.error("Audio playback error:", audioErr);
+              }
             }
+
             if (msg.serverContent?.interrupted) {
               activeSourcesRef.current.forEach(s => { try { s.stop(); } catch(e) {} });
               activeSourcesRef.current.clear();
@@ -142,11 +180,23 @@ const App: React.FC = () => {
               setIsAgentSpeaking(false);
             }
           },
-          onerror: (e) => { console.error(e); stopCall(); },
-          onclose: () => stopCall(),
+          onerror: (e) => { 
+            console.error("Live API Error:", e);
+            alert("Connection error occurred. Please ensure your API key is valid and has Gemini Live permissions.");
+            stopCall(); 
+          },
+          onclose: () => {
+            console.log("Gemini Session Closed.");
+            stopCall();
+          },
         }
       });
-    } catch (err) { console.error(err); setIsConnecting(false); stopCall(); }
+    } catch (err: any) { 
+      console.error("Start Call Exception:", err); 
+      alert("Error accessing microphone or establishing connection: " + (err.message || "Unknown error"));
+      setIsConnecting(false); 
+      stopCall(); 
+    }
   };
 
   const renderTabContent = () => {
@@ -230,15 +280,20 @@ const App: React.FC = () => {
                 <div className="md:w-2/5 flex justify-center md:justify-end">
                   <button 
                     onClick={startCall}
-                    className="group relative flex flex-col items-center gap-8 bg-[#1e1b4b] text-white px-16 py-14 rounded-[3rem] transition-all hover:shadow-2xl hover:scale-[1.02] active:scale-95 border border-indigo-900/20 shadow-xl"
+                    disabled={isConnecting}
+                    className="group relative flex flex-col items-center gap-8 bg-[#1e1b4b] text-white px-16 py-14 rounded-[3rem] transition-all hover:shadow-2xl hover:scale-[1.02] active:scale-95 border border-indigo-900/20 shadow-xl disabled:opacity-50"
                   >
                     <div className="p-1 bg-[#c5a059]/30 rounded-full">
                       <div className="p-6 bg-[#c5a059] rounded-full shadow-inner group-hover:scale-110 transition-transform">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" strokeWidth={1} /></svg>
+                        {isConnecting ? (
+                           <div className="h-10 w-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" strokeWidth={1} /></svg>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <span className="text-xl font-bold tracking-tight block">Initiate Concierge</span>
+                      <span className="text-xl font-bold tracking-tight block">{isConnecting ? 'Connecting...' : 'Initiate Concierge'}</span>
                       <span className="text-[9px] text-[#c5a059] font-black uppercase tracking-[0.3em]">Encrypted Connection</span>
                     </div>
                   </button>
