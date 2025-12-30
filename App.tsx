@@ -222,8 +222,8 @@ const App: React.FC = () => {
                 <div className="md:w-3/5 text-center md:text-left space-y-8">
                   <div className="space-y-6">
                     <span className="text-[#c5a059] font-black text-[10px] tracking-[0.5em] uppercase">Where tradition meets technology</span>
-                    <h2 className="text-5xl md:text-7xl font-serif text-[#1e1b4b] font-bold leading-[1.1]">Optical concierge at your service <br/><span className="italic font-normal text-slate-400">24 hours every day.</span></h2>
-                    <p className="text-slate-400 max-w-xl md:mx-0 mx-auto font-medium text-lg leading-relaxed">Experience sophisticated optical concierge assistance. Boutique standards, professional guidance, available whenever you require.</p>
+                    <h2 className="text-5xl md:text-7xl font-serif text-[#1e1b4b] font-bold leading-[1.1]">Optical concierge at your service <br/><span className="italic font-normal text-slate-400">24 hours, 7 days a week.</span></h2>
+                    <p className="text-slate-400 max-w-xl md:mx-0 mx-auto font-medium text-lg leading-relaxed">Experience sophisticated optical concierge assistance. Boutique standards, optical guidance, available whenever you require.</p>
                   </div>
                 </div>
 
